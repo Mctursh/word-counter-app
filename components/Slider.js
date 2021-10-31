@@ -1,6 +1,7 @@
 import React from 'react';
 import AppIntroSlider from 'react-native-app-intro-slider';
 import WelcomeScreen from './WelcomeScreen';
+import AsyncStorage from "@react-native-async-storage/async-storage"
 
 
 
@@ -44,11 +45,16 @@ const _renderItem = ({ item }) => {
   
 const Slider = ({ navigation }) => {
 
-    const _onDone = () => {
+    const _onDone = async () => {
     // User finished the introduction. Show real app through
     // navigation or simply by controlling state
     // setShowApp(false)
-    navigation.navigate("Main")
+    try {
+        await AsyncStorage.setItem("firstTime", "false")
+        navigation.navigate("Main")
+    } catch (e) {
+        //Handle error
+    }
   }
 
     return (

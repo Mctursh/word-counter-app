@@ -11,6 +11,7 @@ import React, { useEffect, useState } from 'react';
 // import {Node} from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import AsyncStorage from "@react-native-async-storage/async-storage"
 import {
   SafeAreaView,
   ScrollView,
@@ -40,18 +41,27 @@ const Stack = createNativeStackNavigator()
 
 const App = () => {
 
-  // const [ showApp, setShowApp ] = useState(false)
-  // useEffect(() => {
+  const [ showApp, setShowApp ] = useState(false)
 
-  // },[showApp])
+  const getFirst = async () => {
+    try {
+      const first = await AsyncStorage.getItem("firstTime")
+      if (first  !== null) {
+        setShowApp(first)
+      }
+    } catch (e) {
+      //Handle Error
+    }
+  }
 
-  
+  useEffect(() => {
+    getFirst()
+  },[])
 
-  
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Welcome">
-        <Stack.Screen options={{ headerShown: false }} name="Welcome" component={Slider} />
+      <Stack.Navigator initialRouteName={showApp ? "Main" : "Welcome" }>
+        {!showApp && <Stack.Screen options={{ headerShown: false }} name="Welcome" component={Slider} />}
         <Stack.Screen options={{ headerShown: false }} name="Main" component={Main} />
       </Stack.Navigator>
     </NavigationContainer>
