@@ -1,12 +1,15 @@
 import React, { useRef, useEffect, useState } from "react"
-import { Text, View, StyleSheet, StatusBar, TextInput, ScrollView, Button, Pressable } from "react-native"
+import { Text, View, StyleSheet, StatusBar, TextInput, ScrollView, Pressable } from "react-native"
+import Tts from 'react-native-tts';
+import * as Animatable from 'react-native-animatable';
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
+import { countWords } from './helpers'
 
 const saveIcon = <FontAwesome5 name={'save'} size={15} style={{marginRight: 10}} color="#fff" />;
 const readIcon = <FontAwesome5 name={'play'} size={15} style={{marginRight: 10}} color="#fff" />;
 const lightModeIcon = <FontAwesome5 name={'sun'} size={25} color="#000" solid/>;
-// const darkModeIcon = <FontAwesome5 name={'moon'} size={25} color="#000" solid/>;
+const darkModeIcon = <FontAwesome5 name={'moon'} size={25} color="#BBBBBB" solid/>;
 
 const styles = StyleSheet.create({
     center : {
@@ -14,7 +17,23 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     pad: {
-        padding: 12
+        paddingTop: 12,
+        paddingHorizontal: 20
+    },
+    darkBG: {
+        backgroundColor: "#0A043C"
+    },
+    darkFont: {
+        color: "#BBBBBB",
+    },
+    lightFont: {
+        color: "#000000",
+    },
+    darkTextInput: {
+        borderColor: "#bbbbbb"
+    },
+    darkTitleContainer: {
+        borderBottomColor: "#fff"
     },
     container: {
         flex: 1,
@@ -51,11 +70,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 10,
         padding: 10,
+        maxHeight: 300,
         // marginBottom: 12
     },
     textInput: {
         textAlignVertical: 'top',
-        // width: "100%",
+        width: "100%",
         // height: "100%",
     },
     instruction: {
@@ -76,7 +96,7 @@ const styles = StyleSheet.create({
     button: {
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 12,
+        paddingVertical: 20,
         paddingHorizontal: 62,
         borderRadius: 4,
         elevation: 3,
@@ -100,7 +120,8 @@ const styles = StyleSheet.create({
 const Main = () => {
 
     const [phrase, setPhrase] = useState("")
-    const [ Words, setWords ] = useState(20)
+    const [ Words, setWords ] = useState(0)
+    const [ theme, setTheme ] = useState("light")
     const inp = useRef(null)
 
     const handlePress = () => {
@@ -111,6 +132,9 @@ const Main = () => {
         // alert(text)
         // storeStr(text)
         setPhrase(text)
+        // alert(countWords(text))
+        const words = countWords(text)
+        setWords(words)
     }
 
     const storeStr = async (str) => {
@@ -137,9 +161,16 @@ const Main = () => {
         alert("saved")
     }
 
-    const show = async () => {
+    const read = async () => {
         await getStoreStr()
-        alert(phrase)
+        Tts.getInitStatus().then(() => {
+            Tts.speak(phrase);
+        });
+    }
+
+    const handleTheme = () => {
+        // alert("toggled")
+        setTheme(prev => prev == "dark" ? "light" : "dark")
     }
 
     useEffect(() => {
@@ -147,56 +178,58 @@ const Main = () => {
     },[])
     
     return(
-        <ScrollView contentContainerStyle={[styles.center, styles.pad, styles.container]}>
+        <ScrollView contentContainerStyle={[styles.center, styles.pad, styles.container, theme == "dark" && styles.darkBG]}>
             <StatusBar hidden={true} backgroundColor="#4B3869" />
             <View style={[styles.margB, styles.title]} >
-                <View style={[styles.titleContainer, styles.wid100, {flexDirection: "row", }]}>
+                <View style={[styles.titleContainer, styles.wid100, theme == "dark" && styles.darkTitleContainer, {flexDirection: "row", }]}>
                     <Text style={{flex: 1}}></Text>
-                    <Text style={styles.titleText}>Word Counter</Text>
+                    <Text style={[styles.titleText,  theme == "dark" && styles.darkFont]}>Word Counter</Text>
                     <View style={styles.modeIcon}>
-                        {lightModeIcon}
+                        <Pressable onPress={handleTheme} >
+                            {theme == "dark" ? darkModeIcon : lightModeIcon}
+                        </Pressable>
                     </View>
                 </View>
             </View>
             <View style={[styles.center, styles.main]} >
-                <Text style={styles.instruction}>
+                <Text style={[styles.instruction, theme == "dark" && styles.darkFont]}>
                     Please type a sentence or phrase below to get started.  
                 </Text>
-                <View ref={inp} style={[styles.margB, styles.input]}>
-                    <TextInput value={phrase} onChangeText={handleChange} onTouchStart={handlePress} editable={true} multiline numberOfLines={20} placeholder="Type or paste phrase" style={styles.textInput} />
+                <View ref={inp} style={[styles.margB, styles.input,  theme == "dark" && styles.darkTextInput]}>
+                    <TextInput value={phrase} onChangeText={handleChange} onTouchStart={handlePress} editable={true} multiline numberOfLines={20} placeholder="Type or paste phrase" placeholderTextColor={theme == "dark" ? `#bbbbbb` : "#000000"} style={[styles.textInput, theme == "dark" ? styles.darkFont : styles.lightFont]} />
                 </View>
                 <View style={[styles.margB, styles.wid100]}>
-                    <Text style={{fontSize: 30}} >Count: {Words}</Text>
+                    <Text style={[{fontSize: 30}, theme == "dark" && styles.darkFont]} >Count: {Words}</Text>
                 </View>
             </View>
             <View style={{width: "100%"}}>
                 <View style={styles.saveParent}>
-
-                <Pressable style={[styles.margB, styles.button]} onPress={save}>
-                    <View style={{flexDirection: "row"}}>
-                        {saveIcon}
-                        <Text style={styles.text} >
-                            Save
-                        </Text>
-                    </View>
-                </Pressable>
-                <Pressable style={styles.button} onPress={show}>
-                    <View style={{flexDirection: "row"}} >
-                        {readIcon}
-                        <Text style={styles.text}>
-                            Show
-                        </Text>
-                    </View>
-                </Pressable>
-                {/* <Button
-                    
-                    title='save'
-                    onPress={save}
-                />
-                <Button 
-                    title='show'
-                    onPress={show}
-                /> */}
+                <Animatable.View 
+                    animation="bounceInLeft" 
+                    delay={100}
+                    >
+                    <Pressable style={[styles.margB, styles.button]} onPress={save}>
+                        <View style={{flexDirection: "row"}}>
+                            {saveIcon}
+                            <Text style={styles.text} >
+                                Save
+                            </Text>
+                        </View>
+                    </Pressable>
+                </Animatable.View>
+                <Animatable.View 
+                    animation="bounceInRight"
+                    delay={500}
+                    >
+                    <Pressable style={styles.button} onPress={read}>
+                        <View style={{flexDirection: "row"}} >
+                            {readIcon}
+                            <Text style={styles.text}>
+                                Read
+                            </Text>
+                        </View>
+                    </Pressable>
+                </Animatable.View>
                 </View>
             </View>
         </ScrollView>
